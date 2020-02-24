@@ -1,6 +1,6 @@
 ---
-title: "QWE"
-author: "Team - Nitesh Jindal(11915048), Manoj Sharma(11915050), Deepak Singhania(11915070)"
+title: "Customer churn prediction"
+author: Manoj Sharma
 date: "12/19/2019"
 output:
   html_document: default
@@ -18,16 +18,12 @@ suppressPackageStartupMessages({
 
 ```
 
-# Ans 1 -
-
 #Load data 
 
 ```{r, echo=FALSE}
 qwe <- read_excel("QWE-Excel.xlsx", sheet = 2)
 head(qwe)
 ```
-
-# Filter the data as per wall's belief -  
 
 ```{r , echo=FALSE}
 qwe1 <- qwe[,c(1,2,3)]
@@ -89,8 +85,6 @@ plot( p2, col=rgb(1,0,0,1/4), xlim=c(0,10), add=T)  # second
 ```
 
 
-# Ans 2 -
-
 ```{r , echo=FALSE}
 qwe <- qwe[, -c(14,15,16)]
 colnames(qwe)
@@ -99,8 +93,6 @@ colnames(qwe) <- c("ID","custage", "churn", "chiscore0", "chiscore1", "supportca
 ```
 
 
-
-**2(a)** 
 
 ```{r , 2(a)_log_model}
 
@@ -125,42 +117,13 @@ qwe[672,c(1,3)]
 ```
 
 
-**2(b)** 
-
 ```{r , 2(b)}
-
-
-
-#customer 354
-
-#Calculated below the predicted probability that customer 354 will leave between December 2011 and February 2012 is -> 10.02 %
-predicted_churn[354]*100
-
-#Actual value corresponding to churn feature for custmer 354 from given data = 0. 
-qwe[354,c(1,3)]
-
-
-
-
-#customer 5203
-
-#Calculated below the predicted probability that customer 5203 will leave between December 2011 and February 2012 is -> 2.89 %
-predicted_churn[5203]*100
-
-#Actual value corresponding to churn feature for custmer 5203 from given data = 0. 
-qwe[5203,c(1,3)]
 
 
 ```
 
 
 
-# Ans 3-
-
-```{r, better_approach_code_part}
-
-
-#Creating confusion matrix for our logistic regression approach to check misclassified customers-
 
 actual_predicted_cv = cbind(qwe$churn, round(predicted_churn,2))
 actual_predicted_cv  = data.frame(qwe$churn, round(predicted_churn,2))
@@ -190,7 +153,7 @@ precision_log
 
 #hist(qwe$days_since_lastlogin, xlim = c(-100, 100))
 #hist(qwe$views1)
- # data is imbalanced. More number of churns i.e. 0s than number of not-churns i.e. 1s
+# data is imbalanced. More number of churns i.e. 0s than number of not-churns i.e. 1s
 
 
 wts = 100/table(qwe$churn)  #Assign weight 0.01 to 0 and 0.30 to 1
@@ -447,19 +410,12 @@ newpred[672]
 qwe[672,c(1,3)]
 
 
-
-
-
 #customer 354
 
 newpred[354]
 
 #Actual value corresponding to churn feature for custmer 354 from given data = 0. 
 qwe[354,c(1,3)]
-
-
-
-
 
 
 #customer 5203
@@ -482,6 +438,3 @@ tune.out$best.model$cost #cost = 1000
 head(tune.out$best.model$fitted)
 ```
 
-
-
-#### Thank you ###################
