@@ -1,0 +1,487 @@
+---
+title: "QWE"
+author: "Team - Nitesh Jindal(11915048), Manoj Sharma(11915050), Deepak Singhania(11915070)"
+date: "12/19/2019"
+output:
+  html_document: default
+---
+
+
+```{r, import libraries}
+rm(list = ls())
+suppressPackageStartupMessages({
+  if (!require(readxl)) {install.packages("readxl")}; library(readxl)
+  if (!require(dplyr)) {install.packages("dplyr")}; library(dplyr)
+  if (!require(e1071)) {install.packages("e1071")}; library(e1071)
+  #if (!require(tidyverse)) {install.packages("tidyver")}; library(dplyr))
+})
+
+```
+
+# Ans 1 -
+
+#Load data 
+
+```{r, echo=FALSE}
+qwe <- read_excel("QWE-Excel.xlsx", sheet = 2)
+head(qwe)
+```
+
+# Filter the data as per wall's belief -  
+
+```{r , echo=FALSE}
+qwe1 <- qwe[,c(1,2,3)]
+sapply(qwe1, class)
+qwe1_1 = qwe1[qwe1$`Customer Age (in months)` >= 14, ]
+qwe1_2 = qwe1[qwe1$`Customer Age (in months)` <= 6, ]
+qwe1_3 = qwe1[qwe1$`Customer Age (in months)` > 6 & qwe1$`Customer Age (in months)` < 14, ]
+
+colnames(qwe1_1) <- c("ID", "custage", "churn")
+colnames(qwe1_2) <- c("ID", "custage", "churn")
+colnames(qwe1_3) <- c("ID", "custage", "churn")
+
+print("churn counts for customer age >= 14 months")
+tab1 = qwe1_1 %>% select(churn, ID) %>% group_by(churn) %>%summarise(count = n())
+print(tab1$count[2]/tab1$count[1])
+# ~ 6%
+
+print("churn counts for customer age <= 6 months")
+tab2 = qwe1_2 %>% select(churn, ID) %>% group_by(churn) %>%summarise(count = n())
+print(tab2$count[2]/tab2$count[1])
+#  ~2.2 %
+
+print("churn counts for customer age > 6 months and customer age < 14 months")
+tab3 = qwe1_3 %>% select(churn, ID) %>% group_by(churn) %>%summarise(count = n())
+print(tab3$count[2]/tab3$count[1])
+# ~ 8.3%
+```
+
+
+```{r , plot}
+
+#Churn Count Visualization for segments-
+tab1df = as.data.frame(tab1)
+tab2df = as.data.frame(tab2)
+tab3df = as.data.frame(tab3)
+
+"churn counts for customer age >= 14 months"
+barplot(tab1df$count, main = "churn counts for customer age >= 14 months", xlab = "Churn", ylab = "count", names.arg = tab1df$churn)
+
+
+"churn counts for customer age <= 6 months"
+barplot(tab2df$count, main = "churn counts for customer age <= 6 months", xlab = "Churn", ylab = "count", names.arg = tab2df$churn)
+
+
+"churn counts for customer age > 6 months and customer age < 14 months"
+barplot(tab3df$count, main = "churn counts for customer age > 6 months and customer age < 14 months", xlab = "Churn", ylab = "count", names.arg = tab3df$churn)
+
+
+
+'
+hist(tab2df$churn, tab2$count)
+set.seed(42)
+p1 <- hist(rnorm(500,4))                     # centered at 4
+p2 <- hist(rnorm(500,6))                     # centered at 6
+plot( p1, col=rgb(0,0,1,1/4), xlim=c(0,10))  # first histogram
+plot( p2, col=rgb(1,0,0,1/4), xlim=c(0,10), add=T)  # second
+'
+
+```
+
+
+# Ans 2 -
+
+```{r , echo=FALSE}
+qwe <- qwe[, -c(14,15,16)]
+colnames(qwe)
+colnames(qwe) <- c("ID","custage", "churn", "chiscore0", "chiscore1", "supportcase0", "supportcase1", "supportpriority0", "supportpriority1", "logins1", "blogarticles1", "views1", "days_since_lastlogin") 
+
+```
+
+
+
+**2(a)** 
+
+```{r , 2(a)_log_model}
+
+qwe$churn <- as.factor(as.character(qwe$churn))
+
+
+
+logmod =  glm(churn~., data=qwe, family=binomial)
+summary(logmod)
+
+predicted_churn = predict(logmod, type="response")
+
+ 
+
+#Calculated below the predicted probability that customer 672 will leave between December 2011 and February 2012 is -> 6.80732 %
+predicted_churn[672]*100
+
+#Actual value corresponding to churn feature for custmer 672 from given data = 0. 
+qwe[672,c(1,3)]
+
+
+```
+
+
+**2(b)** 
+
+```{r , 2(b)}
+
+
+
+#customer 354
+
+#Calculated below the predicted probability that customer 354 will leave between December 2011 and February 2012 is -> 10.02 %
+predicted_churn[354]*100
+
+#Actual value corresponding to churn feature for custmer 354 from given data = 0. 
+qwe[354,c(1,3)]
+
+
+
+
+#customer 5203
+
+#Calculated below the predicted probability that customer 5203 will leave between December 2011 and February 2012 is -> 2.89 %
+predicted_churn[5203]*100
+
+#Actual value corresponding to churn feature for custmer 5203 from given data = 0. 
+qwe[5203,c(1,3)]
+
+
+```
+
+
+
+# Ans 3-
+
+```{r, better_approach_code_part}
+
+
+#Creating confusion matrix for our logistic regression approach to check misclassified customers-
+
+actual_predicted_cv = cbind(qwe$churn, round(predicted_churn,2))
+actual_predicted_cv  = data.frame(qwe$churn, round(predicted_churn,2))
+
+#proportion of zeros and ones in actual data -
+table(actual_predicted_cv$qwe.churn)[1]/ (table(actual_predicted_cv$qwe.churn)[1] + table(actual_predicted_cv$qwe.churn)[2])
+
+table(actual_predicted_cv$qwe.churn)[2]/ (table(actual_predicted_cv$qwe.churn)[1] + table(actual_predicted_cv$qwe.churn)[2])
+
+#consider churn probabilities below & equal to 0.60 as 0 and churn probabilities above 0.6 as 1 -
+actual_predicted_cv["predicted_dummy"] = ifelse(actual_predicted_cv$round.predicted_churn..2. <= 0.60, 0, 1)
+
+
+#confusion matrix - 
+actual_predicted_cv$predicted_dummy = as.factor(as.character(actual_predicted_cv$predicted_dummy))
+cm_log = table(observed = actual_predicted_cv$qwe.churn, predicted = actual_predicted_cv$predicted_dummy)
+cm_log
+
+#accuracy calculation- 
+acc_log = cm_log[1]/ (cm_log[1] + cm_log[2])
+acc_log*100
+
+precision_log = cm_log[4]/(cm_log[2] + cm_log[4])
+precision_log
+
+#cor(qwe)
+
+#hist(qwe$days_since_lastlogin, xlim = c(-100, 100))
+#hist(qwe$views1)
+ # data is imbalanced. More number of churns i.e. 0s than number of not-churns i.e. 1s
+
+
+wts = 100/table(qwe$churn)  #Assign weight 0.01 to 0 and 0.30 to 1
+wts
+
+svmmod = svm(churn ~ .,data= qwe,kernel="linear",cost=1,gamma=1,class.weight=wts)
+#summary(svmmod)
+
+predicted_churn_svm = predict(svmmod, qwe)
+head(predicted_churn_svm)
+
+cm_svm = table(observed=qwe$churn,predicted=predicted_churn_svm)  # confusion matrix
+cm_svm
+
+acc_svm = (cm_svm[1] + cm_svm[4])/ (cm_svm[1] + cm_svm[2] + cm_svm[3] + cm_svm[4])
+acc_svm*100
+
+precision_svm = cm_svm[4]/(cm_svm[2] + cm_svm[4])
+precision_svm*100
+
+```
+
+# In log model output, confusion matrix and accuracy calculations, we find -
+
+1. we observe that all predicted values for class label 1 i.e. churn = 1.  are zero. Biased model.
+2. accuracy  = 94.91%
+3. Precision = 0%       (:. all 1s are misclassified)
+
+Model is predicting all 1s as 0s. This is a issue of imbalanced data since we have 94.91% of 0s in sample data and 5.08% of 1s in sample data.Hence, the accuracy is also 94.91%.
+
+
+# As a better approach, let's try weighted SVM with "linear" kernel, cost = 1 , gamma = 1. Weight calculations used are given below. Weights used in above svm trained model are-
+Given weights are ->
+
+         0          1 
+0.01660027 0.30959752 
+
+
+After giving higher weights to class label 1, model is predicting for actual 1s as well.That is actually good and represents a better model than log model.
+Accuracy = 69.56% which is ok ok.
+Precision = 62.22% which is fairly good. 
+
+Take AWAY: Better Model.
+
+This implies that 62.22 percentage of times, model is prediction churned customer(1s) accurately. In earlier case of log model, precision obtained = 0.
+
+
+
+#Let us keep the kernel = 'linear' same as in above case but change weight proportion again to check if we get better precision than obtained above.
+Refer below code wherein we have assigned new weights as -
+class.weight=c("0" = 1, "1" = 10)
+
+```{r, update weights}
+
+#Now let's change the wts - 
+
+#earler weights -
+  #wts = 100/table(qwe$churn)
+  #wts
+
+svmmod = svm(churn ~ .,data= qwe,kernel="linear",cost=1,gamma=1,class.weight=c("0" = 1, "1" = 10))
+predicted_churn_svm = predict(svmmod, qwe)
+cm = table(observed=qwe$churn,predicted=predicted_churn_svm)
+cm # confusion matrix
+
+acc = (cm[1] + cm[4])/ (cm[1] + cm[2] + cm[3] + cm[4])
+acc*100 # 86.78%
+
+precision_svm1= cm[4]/(cm[2] + cm[4])
+precision_svm1*100
+
+
+```
+
+After changing the weights, We observed-
+accuracy = 86.78% &
+precision has dropped to 33.74%.
+
+
+TAKE AWAY: Not a better model since previous model in which we observed ~ 60% precision is better.
+
+#Let us further change the weights keeping the kernel same(i.e. linear).
+Refer below code wherein we have assigned new weights as -
+class.weight=c("0" = 2, "1" = 10) 
+
+
+```{r, update_weights}
+
+svmmod = svm(churn ~ .,data= qwe,kernel="linear",cost=1,gamma=1,class.weight=c("0" = 2, "1" = 10))
+predicted_churn_svm = predict(svmmod, qwe)
+cm = table(observed=qwe$churn,predicted=predicted_churn_svm)
+cm # confusion matrix
+
+acc = (cm[1] + cm[4])/ (cm[1] + cm[2] + cm[3] + cm[4])
+acc*100 
+
+precision_svm2= cm[4]/(cm[2] + cm[4])
+precision_svm2*100
+
+```
+
+After updating the weights and training model, this gives us same result as we obtained from log model. 
+Accuracy = 94.91%
+Precision = 0%
+TAke  AWAY: Not a better model.
+
+
+
+
+```{r, update weights 2}
+svmmod = svm(churn ~ .,data= qwe,kernel="linear",cost=1,gamma=1,class.weight=c("0" = 1.22, "1" = 10))
+predicted_churn_svm = predict(svmmod, qwe)
+cm = table(observed=qwe$churn,predicted=predicted_churn_svm)
+cm # confusion matrix
+
+acc = (cm[1] + cm[4])/ (cm[1] + cm[2] + cm[3] + cm[4])
+acc*100 
+
+
+precision_svm3= cm[4]/(cm[2] + cm[4])
+precision_svm3*100
+
+```
+Accuracy = 94.89%  (Good)
+Precision = 0.3%  (fairly low)
+
+TAKE AWAY: Not a better model.
+
+
+Refer below code in which kernal is updated to "radial". Weights are chosen from the best model we selected above -
+
+```{r, changing_kernel_to_radial}
+
+
+#sapply(qwe, class)
+qwe$churn <- as.numeric(as.character(qwe$churn))
+round(cor(qwe),2)
+
+qwe$churn <- as.factor(as.character(qwe$churn))
+wts = 100/table(qwe$churn)  #Assign weight 0.01 to 0 and 0.30 to 1
+wts
+
+svmmod = svm(churn ~ .,data= qwe,kernel="radial",cost=1,gamma=1,class.weight=wts)
+
+predicted_churn_svm = predict(svmmod, qwe)
+head(predicted_churn_svm)
+
+cm_svm = table(observed=qwe$churn,predicted=predicted_churn_svm)  # confusion matrix
+cm_svm
+
+acc_svm = (cm_svm[1] + cm_svm[4])/ (cm_svm[1] + cm_svm[2] + cm_svm[3] + cm_svm[4])
+acc_svm*100
+
+precision_svm = cm_svm[4]/(cm_svm[2] + cm_svm[4])
+precision_svm*100
+
+```
+
+TAKE AWAY: BETTER MODEL than any of previous models.
+In our last best model, we got Accuracy = 69.56% and Precision = 62.22%. In this case, we obtained better accuracy(84.14 %) and similiar precision(~ 60.06 %).
+
+
+#Let us further improve this model by changing weights and kernel as "radial" -
+
+
+```{r, chage_wt_radial}
+
+
+#wts = 100/table(qwe$churn)  #Assign weight 0.01 to 0 and 0.30 to 1
+#wts
+
+svmmod = svm(churn ~ .,data= qwe,kernel="radial",cost=1,gamma=1,class.weight=c("0" = 1, "1" = 10))
+
+predicted_churn_svm = predict(svmmod, qwe)
+head(predicted_churn_svm)
+
+cm_svm = table(observed=qwe$churn,predicted=predicted_churn_svm)  # confusion matrix
+cm_svm
+
+acc_svm = (cm_svm[1] + cm_svm[4])/ (cm_svm[1] + cm_svm[2] + cm_svm[3] + cm_svm[4])
+acc_svm*100
+
+precision_svm = cm_svm[4]/(cm_svm[2] + cm_svm[4])
+precision_svm*100
+
+
+
+```
+
+
+TAKE AWAY: Best Model than any of the previous trained model.Accuracy: 93.61 % ; Precision: 95.04 %.
+That means 95.04 % of times model predicted correctly the actual churned customers i.e. churn =1.
+
+
+
+# Let us tune cost and gamma-
+
+```{r, tune}
+
+#wts = 100/table(qwe$churn)  #Assign weight 0.01 to 0 and 0.30 to 1
+#wts
+
+set.seed(123)
+tune.out=tune(svm, churn~., data=qwe, kernel="radial",class.weight= c("0" = 1, "1" = 10),
+        ranges=list(cost=c(0.1,1,10,100,1000),gamma=c(0.5,1,2,3,4)))
+summary(tune.out)
+
+
+newpred=predict(tune.out$best.model, qwe)
+
+
+cm_svm_cv = table(observed=qwe$churn,predicted=newpred)  # confusion matrix
+cm_svm_cv
+
+acc_svm_cv = (cm_svm_cv[1] + cm_svm_cv[4])/ (cm_svm_cv[1] + cm_svm_cv[2] + cm_svm_cv[3] + cm_svm_cv[4])
+
+acc_svm_cv*100
+
+
+precision_svm = cm_svm_cv[4]/(cm_svm_cv[2] + cm_svm_cv[4])
+precision_svm*100
+
+
+```
+
+After cost and gamma parameter tuning and keeping kernel = "radial", we obtain above model which yields -
+Accuracy: 99.54%
+Precision: 99.38%
+#This model is best in any of the previous models with acc = 99.54% and precision = 99.38%
+
+
+Refer below code for Best Model Summary - 
+
+```{r, predicted_val}
+
+tune.out$best.model # kernel = "radial"
+tune.out$best.model$gamma # gamma = 4
+tune.out$best.model$cost #cost = 1000
+
+head(tune.out$best.model$fitted)
+```
+
+#Estimates of probabilities that customers 672, 354 and 5,203 will leave? - 
+
+
+```{r, predicted_values}
+
+
+# customer 672 
+
+newpred[672]
+
+#Actual value corresponding to churn feature for custmer 672 from given data = 0. 
+qwe[672,c(1,3)]
+
+
+
+
+
+#customer 354
+
+newpred[354]
+
+#Actual value corresponding to churn feature for custmer 354 from given data = 0. 
+qwe[354,c(1,3)]
+
+
+
+
+
+
+#customer 5203
+
+newpred[5203]
+
+#Actual value corresponding to churn feature for custmer 5203 from given data = 0. 
+qwe[5203,c(1,3)]
+
+```
+
+
+
+```{r, important_features}
+
+tune.out$best.model # kernel = "radial"
+tune.out$best.model$gamma # gamma = 4
+tune.out$best.model$cost #cost = 1000
+
+head(tune.out$best.model$fitted)
+```
+
+
+
+#### Thank you ###################
